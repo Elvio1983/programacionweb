@@ -1,0 +1,2168 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Dashboard Programación Web - UTEA</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+  // Fallback si jsdelivr no responde
+  if (typeof Chart === "undefined") {
+    document.write('<script src="https://unpkg.com/chart.js@4.4.0/dist/chart.umd.min.js"><\/script>');
+  }
+</script>
+<script>
+  // 2do fallback
+  window.addEventListener("load", function(){
+    if (typeof Chart === "undefined") {
+      var s=document.createElement("script");
+      s.src="https://cdn.jsdelivr.net/gh/chartjs/Chart.js@v4.4.0/dist/chart.umd.min.js";
+      s.onload=function(){ if(window.iniciarDashboard) window.iniciarDashboard(); };
+      document.head.appendChild(s);
+    }
+  });
+</script>
+<style>
+  /* ============== RESET / BASE ============== */
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{font-family:'Segoe UI',Tahoma,Arial,sans-serif;background:#eef2f7;color:#1a2332;font-size:13px}
+  :root{
+    --azul-1:#0b2545;
+    --azul-2:#13315c;
+    --azul-3:#1d4e89;
+    --azul-4:#2a6db0;
+    --azul-claro:#5fa8d3;
+    --rojo-1:#a4161a;
+    --rojo-2:#d62828;
+    --rojo-3:#e63946;
+    --amarillo:#f6bd60;
+    --verde:#2a9d8f;
+    --gris:#e9ecef;
+    --gris-2:#ced4da;
+    --texto:#1a2332;
+    --texto-claro:#6c757d;
+    --panel:#ffffff;
+    --shadow:0 2px 6px rgba(11,37,69,0.08);
+    --radius:6px;
+  }
+
+  /* ============== HEADER ============== */
+  .topbar{
+    background:linear-gradient(90deg,var(--azul-1) 0%,var(--azul-3) 60%,var(--rojo-1) 100%);
+    color:#fff;padding:8px 18px;display:flex;align-items:center;gap:18px;
+    box-shadow:0 4px 12px rgba(0,0,0,.15);position:sticky;top:0;z-index:50;
+  }
+  .topbar .logo{
+    width:64px;height:64px;border-radius:50%;background:#fff;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 2px 8px rgba(0,0,0,.2);overflow:hidden;flex-shrink:0;
+    position:relative;
+  }
+  .topbar .logo svg, .topbar .logo img{width:60px;height:60px;object-fit:contain;border-radius:50%}
+  .topbar .titulo{flex:1;line-height:1.1}
+  .topbar .titulo h1{font-size:22px;font-weight:700;letter-spacing:.5px}
+  .topbar .titulo .sub{font-size:12px;opacity:.9;margin-top:3px}
+  .topbar .titulo .escuela{font-size:11px;opacity:.85;margin-top:1px;font-style:italic}
+  .docente-badge{
+    background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);
+    padding:6px 12px;border-radius:20px;font-size:12px;backdrop-filter:blur(4px);
+  }
+  .docente-badge b{display:block;font-size:13px}
+  .topbar .acciones{display:flex;gap:8px}
+  .btn-csv{
+    background:#fff;color:var(--azul-1);border:none;padding:7px 14px;
+    border-radius:4px;font-weight:600;cursor:pointer;font-size:12px;
+    display:flex;align-items:center;gap:6px;transition:.15s;
+  }
+  .btn-csv:hover{background:var(--amarillo);transform:translateY(-1px)}
+
+  /* ============== KPI BAR ============== */
+  .kpis{
+    display:grid;grid-template-columns:repeat(6,1fr);gap:8px;
+    padding:10px 14px;background:#1a2840;
+  }
+  .kpi{
+    background:rgba(255,255,255,.06);border-left:3px solid var(--azul-claro);
+    padding:8px 12px;border-radius:4px;color:#fff;
+  }
+  .kpi.red{border-left-color:var(--rojo-3)}
+  .kpi.green{border-left-color:var(--verde)}
+  .kpi.yellow{border-left-color:var(--amarillo)}
+  .kpi .lbl{font-size:10.5px;opacity:.75;text-transform:uppercase;letter-spacing:.5px}
+  .kpi .val{font-size:22px;font-weight:700;margin-top:2px}
+  .kpi .delta{font-size:10px;opacity:.7;margin-top:1px}
+
+  /* ============== SEGMENTADORES TIPO POWER BI ============== */
+  .slicers{
+    display:grid;grid-template-columns:repeat(12,1fr);gap:10px;
+    padding:12px 14px;background:#f6f8fb;border-bottom:1px solid var(--gris-2);
+    box-shadow:var(--shadow);align-items:stretch;
+  }
+  .slicers::before{
+    content:"SEGMENTADORES";grid-column:span 12;color:var(--azul-1);
+    font-size:11px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;
+    border-left:4px solid var(--azul-3);padding-left:8px;margin-bottom:-2px;
+  }
+  .slicer-group{
+    grid-column:span 2;background:#fff;border:1px solid #d7dee8;border-radius:8px;
+    padding:7px 8px;box-shadow:0 2px 5px rgba(11,37,69,.06);
+    display:flex;flex-direction:column;gap:6px;min-height:64px;
+  }
+  .slicer-group:nth-of-type(4){grid-column:span 3}
+  .slicer-group:nth-of-type(5){grid-column:span 2}
+  .slicer-group label{
+    font-weight:800;color:var(--azul-1);font-size:10px;text-transform:uppercase;
+    letter-spacing:.5px;display:flex;align-items:center;gap:4px;
+  }
+  .slicer-group label::after{content:"▾";font-size:10px;color:var(--texto-claro);margin-left:auto}
+  .chips{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+  .chip{
+    background:#fff;color:var(--azul-2);border:1px solid #b9c5d4;
+    padding:5px 9px;border-radius:4px;font-size:11px;cursor:pointer;
+    transition:.15s;font-weight:600;user-select:none;min-width:42px;text-align:center;
+  }
+  .chip:hover{background:#edf3fb;border-color:var(--azul-3)}
+  .chip.active{background:var(--azul-3);color:#fff;border-color:var(--azul-3);box-shadow:inset 0 0 0 1px rgba(255,255,255,.35)}
+  .chip.red.active{background:var(--rojo-2);border-color:var(--rojo-2)}
+  .chip.green.active{background:var(--verde);border-color:var(--verde)}
+  .search-box{
+    padding:7px 9px;border:1px solid #b9c5d4;border-radius:4px;
+    font-size:12px;width:100%;outline:none;background:#fff;color:var(--texto);
+  }
+  .search-box:focus{border-color:var(--azul-3);box-shadow:0 0 0 2px rgba(29,78,137,.12)}
+  .btn-clear{
+    grid-column:span 1;background:var(--rojo-3);color:#fff;border:none;padding:8px 10px;
+    border-radius:8px;cursor:pointer;font-size:11px;font-weight:800;align-self:stretch;
+    box-shadow:0 2px 5px rgba(166,22,26,.15);
+  }
+  .btn-clear:hover{background:var(--rojo-1)}
+  .filter-status{
+    grid-column:span 2;font-size:11px;color:var(--texto-claro);background:#fff;
+    padding:8px 10px;border-radius:8px;border:1px solid #d7dee8;align-self:stretch;
+    display:flex;align-items:center;justify-content:center;text-align:center;
+  }
+  .filter-status b{color:var(--azul-3)}
+  .estado-porcentaje{
+    margin-top:4px;text-align:center;font-size:11px;font-weight:700;color:var(--azul-1);
+  }
+  .estado-porcentaje .apr{color:var(--verde)}
+  .estado-porcentaje .des{color:var(--rojo-2)}
+  @media (max-width: 1200px){
+    .slicer-group,.slicer-group:nth-of-type(4),.slicer-group:nth-of-type(5),.btn-clear,.filter-status{grid-column:span 4}
+  }
+  @media (max-width: 760px){
+    .slicer-group,.slicer-group:nth-of-type(4),.slicer-group:nth-of-type(5),.btn-clear,.filter-status{grid-column:span 12}
+  }
+
+  /* ============== GRID PRINCIPAL ============== */
+  .grid{
+    display:grid;grid-template-columns:repeat(12,1fr);gap:8px;
+    padding:10px;
+  }
+  .panel{
+    background:var(--panel);border-radius:var(--radius);padding:10px 12px;
+    box-shadow:var(--shadow);border-top:3px solid var(--azul-3);
+    min-height:0;display:flex;flex-direction:column;
+  }
+  .panel.red{border-top-color:var(--rojo-2)}
+  .panel.yellow{border-top-color:var(--amarillo)}
+  .panel.green{border-top-color:var(--verde)}
+  .panel h3{
+    font-size:12px;color:var(--azul-1);text-transform:uppercase;
+    letter-spacing:.5px;margin-bottom:6px;font-weight:700;
+    border-bottom:1px dashed var(--gris-2);padding-bottom:4px;
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .panel h3 .info{
+    font-size:10px;color:var(--texto-claro);font-weight:500;
+    text-transform:none;letter-spacing:0;
+  }
+  .canvas-wrap{position:relative;flex:1;min-height:160px}
+
+  .col-3{grid-column:span 3}
+  .col-4{grid-column:span 4}
+  .col-5{grid-column:span 5}
+  .col-6{grid-column:span 6}
+  .col-7{grid-column:span 7}
+  .col-8{grid-column:span 8}
+  .col-9{grid-column:span 9}
+  .col-12{grid-column:span 12}
+
+  /* GAUGES / KPI grandes */
+  .gauge-container{display:flex;align-items:center;justify-content:space-around;height:100%}
+  .gauge-mini{position:relative;width:130px;height:130px}
+  .gauge-mini .label-center{
+    position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    text-align:center;
+  }
+  .gauge-mini .label-center .num{font-size:22px;font-weight:700;color:var(--azul-1)}
+  .gauge-mini .label-center .lbl{font-size:10px;color:var(--texto-claro);text-transform:uppercase}
+
+  /* TABLA */
+  .tabla-wrap{max-height:280px;overflow-y:auto;border:1px solid var(--gris-2);border-radius:4px}
+  table.estudiantes{width:100%;border-collapse:collapse;font-size:11.5px}
+  table.estudiantes thead{
+    position:sticky;top:0;background:var(--azul-1);color:#fff;z-index:2;
+  }
+  table.estudiantes th{padding:7px 8px;text-align:left;font-weight:600;font-size:11px;cursor:pointer;user-select:none}
+  table.estudiantes th:hover{background:var(--azul-3)}
+  table.estudiantes td{padding:6px 8px;border-bottom:1px solid #f0f4f9}
+  table.estudiantes tr:hover{background:#f8fbff}
+  table.estudiantes tr.aprobado td:last-child{color:var(--verde);font-weight:700}
+  table.estudiantes tr.desaprobado td:last-child{color:var(--rojo-2);font-weight:700}
+  .badge-est{
+    padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;
+    display:inline-block;
+  }
+  .badge-est.apr{background:#d4edda;color:#155724}
+  .badge-est.des{background:#f8d7da;color:#721c24}
+
+  /* TOP-N list */
+  .top-list{display:flex;flex-direction:column;gap:5px;margin-top:4px}
+  .top-row{
+    display:grid;grid-template-columns:24px 1fr 50px;gap:8px;
+    padding:5px 6px;background:#f0f4f9;border-radius:4px;
+    font-size:11px;align-items:center;cursor:pointer;transition:.1s;
+  }
+  .top-row:hover{background:#e1ebf5}
+  .top-row .pos{
+    background:var(--azul-3);color:#fff;text-align:center;
+    border-radius:50%;font-size:10px;font-weight:700;line-height:20px;height:20px;
+  }
+  .top-row.gold .pos{background:#d4af37}
+  .top-row.silver .pos{background:#9ca3af}
+  .top-row.bronze .pos{background:#cd7f32}
+  .top-row .nota{
+    text-align:right;font-weight:700;color:var(--azul-1);
+  }
+
+  /* RIESGO list */
+  .riesgo-row .nota{color:var(--rojo-2)}
+  .riesgo-row .pos{background:var(--rojo-2)}
+
+  /* LEGEND custom */
+  .leyenda{display:flex;gap:10px;font-size:10.5px;flex-wrap:wrap;margin-top:4px}
+  .leyenda .item{display:flex;align-items:center;gap:4px}
+  .leyenda .item .dot{width:9px;height:9px;border-radius:2px}
+
+  /* CSV box */
+  .csv-modal{
+    position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;
+    align-items:center;justify-content:center;z-index:1000;
+  }
+  .csv-modal.show{display:flex}
+  .csv-box{
+    background:#fff;width:560px;max-width:92%;border-radius:8px;padding:18px;
+    box-shadow:0 12px 40px rgba(0,0,0,.3);
+  }
+  .csv-box h3{color:var(--azul-1);margin-bottom:8px}
+  .csv-box p{font-size:12px;color:var(--texto-claro);margin-bottom:10px;line-height:1.4}
+  .csv-box textarea{
+    width:100%;height:160px;padding:8px;font-family:monospace;font-size:11px;
+    border:1px solid var(--gris-2);border-radius:4px;resize:vertical;
+  }
+  .csv-box .row{display:flex;gap:8px;margin-top:10px;justify-content:flex-end}
+  .csv-box button{
+    padding:8px 16px;border:none;border-radius:4px;cursor:pointer;font-weight:600;
+  }
+  .csv-box .ok{background:var(--azul-3);color:#fff}
+  .csv-box .cancel{background:var(--gris-2);color:var(--texto)}
+  .csv-box .file-row{display:flex;align-items:center;gap:8px;margin-top:8px}
+
+  /* Footer */
+  .footer{
+    text-align:center;color:var(--texto-claro);font-size:10.5px;
+    padding:10px;border-top:1px solid var(--gris-2);background:#fff;margin-top:8px;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar{width:8px;height:8px}
+  ::-webkit-scrollbar-track{background:#f0f4f9}
+  ::-webkit-scrollbar-thumb{background:var(--azul-claro);border-radius:4px}
+
+  @media (max-width: 1200px){
+    .col-3,.col-4,.col-5{grid-column:span 6}
+    .col-6,.col-7,.col-8,.col-9{grid-column:span 12}
+    .kpis{grid-template-columns:repeat(3,1fr)}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============== HEADER ============== -->
+<header class="topbar">
+  <div class="logo" id="logoBox" title="Logo CYDERCAP">
+    <!-- Logo oficial CYDERCAP desde la web -->
+    <div id="logoContent">
+      <img src="https://www.cydercap.com/assets/img/logo.png" alt="Logo CYDERCAP"/>
+    </div>
+  </div>
+  <div class="titulo">
+    <h1>DASHBOARD - PROGRAMACIÓN WEB</h1>
+    <div class="sub">Universidad Tecnológica de los Andes</div>
+    <div class="escuela">Escuela Profesional de Ingeniería de Sistemas · Semestre 2026-I</div>
+  </div>
+  <div class="docente-badge">
+    <span style="font-size:10px;opacity:.85">DOCENTE</span>
+    <b>Mg. Elvio Tintaya Zegarra</b>
+  </div>
+</header>
+
+<!-- ============== KPI BAR ============== -->
+<section class="kpis">
+  <div class="kpi"><div class="lbl">Total Estudiantes</div><div class="val" id="kpi-total">0</div><div class="delta" id="kpi-total-d">matriculados</div></div>
+  <div class="kpi green"><div class="lbl">Promedio General</div><div class="val" id="kpi-prom">0.0</div><div class="delta">escala 0-20</div></div>
+  <div class="kpi green"><div class="lbl">Aprobados</div><div class="val" id="kpi-apr">0</div><div class="delta" id="kpi-apr-d">0%</div></div>
+  <div class="kpi red"><div class="lbl">Desaprobados</div><div class="val" id="kpi-des">0</div><div class="delta" id="kpi-des-d">0%</div></div>
+  <div class="kpi yellow"><div class="lbl">Nota Máxima</div><div class="val" id="kpi-max">0</div><div class="delta" id="kpi-max-n">-</div></div>
+  <div class="kpi red"><div class="lbl">Nota Mínima</div><div class="val" id="kpi-min">0</div><div class="delta" id="kpi-min-n">-</div></div>
+</section>
+
+<!-- ============== SLICERS ============== -->
+<section class="slicers">
+  <div class="slicer-group">
+    <label>Sexo estimado:</label>
+    <div class="chips" id="chips-sexo"><!-- se rellena dinámicamente --></div>
+  </div>
+  <div class="slicer-group">
+    <label>Estado:</label>
+    <div class="chips" id="chips-estado">
+      <span class="chip green" data-val="Aprobado">Aprobado</span>
+      <span class="chip red" data-val="Desaprobado">Desaprobado</span>
+    </div>
+  </div>
+  <div class="slicer-group">
+    <label>Ciclo:</label>
+    <div class="chips" id="chips-ciclo">
+      <!-- se rellena dinámicamente -->
+    </div>
+  </div>
+  <div class="slicer-group">
+    <label>Rango:</label>
+    <div class="chips" id="chips-rango">
+      <span class="chip" data-val="0-10">0–10</span>
+      <span class="chip" data-val="11-13">11–13</span>
+      <span class="chip" data-val="14-16">14–16</span>
+      <span class="chip" data-val="17-20">17–20</span>
+    </div>
+  </div>
+  <div class="slicer-group">
+    <label>Buscar:</label>
+    <input type="text" class="search-box" id="busqueda" placeholder="Buscar por código..."/>
+  </div>
+  <button class="btn-clear" onclick="limpiarFiltros()">✕ Limpiar</button>
+  <div class="filter-status" id="filter-status">Mostrando <b id="fs-count">0</b> de <b id="fs-total">0</b> estudiantes</div>
+</section>
+
+<!-- ============== GRID ============== -->
+<section class="grid">
+
+  <!-- Distribución de notas -->
+  <div class="panel col-5">
+    <h3>📊 Distribución de Promedios <span class="info">(rango 0-20)</span></h3>
+    <div class="canvas-wrap"><canvas id="chartHist"></canvas></div>
+  </div>
+
+  <!-- Aprobados / Desaprobados Donut -->
+  <div class="panel col-3 green">
+    <h3>🎓 Estado Académico</h3>
+    <div class="canvas-wrap"><canvas id="chartEstado"></canvas></div>
+    <div class="estado-porcentaje" id="estado-porcentaje">Aprobados: 0% · Desaprobados: 0%</div>
+  </div>
+
+  <!-- Comparativa por sexo -->
+  <div class="panel col-4">
+    <h3>👥 Promedio por Sexo Estimado <span class="info">según nombre propio</span></h3>
+    <div class="canvas-wrap"><canvas id="chartSexo"></canvas></div>
+  </div>
+
+  <!-- Promedio por evaluación -->
+  <div class="panel col-7">
+    <h3>📝 Promedio por Actividad <span class="info">Datos importados desde el Excel de calificaciones</span></h3>
+    <div class="canvas-wrap"><canvas id="chartEvals"></canvas></div>
+  </div>
+
+  <!-- Top 10 mejores -->
+  <div class="panel col-5 yellow">
+    <h3>🏆 Top 10 Mejores Promedios</h3>
+    <div class="top-list" id="top-list" style="overflow-y:auto;max-height:220px"></div>
+  </div>
+
+  <!-- Cumplimiento / Participación -->
+  <div class="panel col-3">
+    <h3>📌 Cumplimiento Promedio</h3>
+    <div class="canvas-wrap"><canvas id="chartAsist"></canvas></div>
+  </div>
+
+  <!-- Rendimiento por categoría (radar) -->
+  <div class="panel col-4">
+    <h3>🎯 Perfil por Actividades</h3>
+    <div class="canvas-wrap"><canvas id="chartRadar"></canvas></div>
+  </div>
+
+  <!-- Evolución por evaluación -->
+  <div class="panel col-5 red">
+    <h3>📈 Tendencia de Calificaciones del Curso</h3>
+    <div class="canvas-wrap"><canvas id="chartLine"></canvas></div>
+  </div>
+
+  <!-- Estudiantes en riesgo -->
+  <div class="panel col-4 red">
+    <h3>⚠ Estudiantes en Riesgo <span class="info">(promedio < 11)</span></h3>
+    <div class="top-list" id="riesgo-list" style="overflow-y:auto;max-height:220px"></div>
+  </div>
+
+  <!-- Cumplimiento vs Promedio scatter -->
+  <div class="panel col-5">
+    <h3>🔗 Correlación: Cumplimiento vs Promedio Final</h3>
+    <div class="canvas-wrap"><canvas id="chartScatter"></canvas></div>
+  </div>
+
+  <!-- Detalle estudiantes -->
+  <div class="panel col-12">
+    <h3>📋 Detalle de Estudiantes <span class="info">Click en cabecera para ordenar</span></h3>
+    <div class="tabla-wrap">
+      <table class="estudiantes" id="tabla-est">
+        <thead>
+          <tr>
+            <th data-key="codigo">Código</th>
+            <th data-key="sexo">Sexo</th>
+            <th data-key="ciclo">Ciclo</th>
+            <th data-key="ev1" title="CREAR CUENTA EN GITHUB PARA PUBLICAR PAGINA WEB">GitHub</th>
+            <th data-key="ev2" title="Actividad Nro. 1">Act. 1</th>
+            <th data-key="ev3" title="Actividad Nro. 2">Act. 2</th>
+            <th data-key="ev4" title="ACTIVIDAD 3 ">Act. 3</th>
+            <th data-key="ev5" title="PAGINA WEB PERSONAL CON HTML Y CSS">Web personal</th>
+            <th data-key="ev6" title="REGISTRAR EL PROYECTO PARA PROGRAMACIÓN WEB">Registro proyecto</th>
+            <th data-key="ev7" title="TAREA SOBRE MODELO DE CAJA CON HTML Y CSS">Modelo caja</th>
+            <th data-key="ev8" title="ACTIVIDAD CON CONTENEDOR Y CAJAS">Contenedores</th>
+            <th data-key="ev9" title="ENTREGA DEL PRIMER AVANCE DEL PROYECTO (PAGINA WEB)">1er avance</th>
+            <th data-key="asistencia">Cumpl. %</th>
+            <th data-key="promedio">Promedio</th>
+            <th data-key="estado">Estado</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+</section>
+
+<div class="footer">
+  © 2026 Universidad Tecnológica de los Andes — Escuela Profesional de Ingeniería de Sistemas · Curso: Programación Web · Datos embebidos desde Excel · Docente: Mg. Elvio Tintaya Zegarra
+</div>
+
+<!-- ============== MODAL CARGAR CSV ============== -->
+<div class="csv-modal" id="csvModal">
+  <div class="csv-box">
+    <h3>Cargar datos desde CSV</h3>
+    <p>Pega el contenido CSV exportado desde Google Classroom / Sheets, o selecciona un archivo. Las columnas esperadas son:
+    <b>codigo, apellidos, nombres, sexo, ciclo, ta1, ta2, ta3, ep, ef, pf, asistencia</b>. El sistema calculará el promedio automáticamente.</p>
+    <textarea id="csvText" placeholder="codigo,apellidos,nombres,sexo,ciclo,ta1,ta2,ta3,ep,ef,pf,asistencia
+202100001,Quispe Huamán,Carlos,M,VII,15,16,14,13,15,16,90
+..."></textarea>
+    <div class="file-row">
+      <input type="file" id="csvFile" accept=".csv,.txt"/>
+      <span style="font-size:11px;color:#888">o sube un archivo .csv</span>
+    </div>
+    <div class="row">
+      <button class="cancel" onclick="cerrarCargador()">Cancelar</button>
+      <button class="ok" onclick="procesarCSV()">Cargar y actualizar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   DATOS EMBEBIDOS DESDE EXCEL
+   Archivo base: Calificaciones PROGRAMACIÓN WEB INGENIERÍA DE SISTEM-6A-ABANCAY-20261 03-05-2026.xlsx
+   Curso: Programación Web — Ingeniería de Sistemas — UTEA
+   Sección/Ciclo: 6A | Escala: 0-20 | Aprobado: ≥ 11
+   Nota: el Excel no contiene sexo ni asistencia. Sexo se estima por nombre propio y
+   "cumplimiento" se calcula según actividades con nota mayor que cero.
+============================================================ */
+const EVAL_COLUMNS = [
+  {
+    "key": "ev1",
+    "label": "GitHub",
+    "full": "CREAR CUENTA EN GITHUB PARA PUBLICAR PAGINA WEB",
+    "date": "1"
+  },
+  {
+    "key": "ev2",
+    "label": "Act. 1",
+    "full": "Actividad Nro. 1",
+    "date": "07 abr"
+  },
+  {
+    "key": "ev3",
+    "label": "Act. 2",
+    "full": "Actividad Nro. 2",
+    "date": "08 abr"
+  },
+  {
+    "key": "ev4",
+    "label": "Act. 3",
+    "full": "ACTIVIDAD 3 ",
+    "date": "14 abr"
+  },
+  {
+    "key": "ev5",
+    "label": "Web personal",
+    "full": "PAGINA WEB PERSONAL CON HTML Y CSS",
+    "date": "19 abr"
+  },
+  {
+    "key": "ev6",
+    "label": "Registro proyecto",
+    "full": "REGISTRAR EL PROYECTO PARA PROGRAMACIÓN WEB",
+    "date": "20 abr"
+  },
+  {
+    "key": "ev7",
+    "label": "Modelo caja",
+    "full": "TAREA SOBRE MODELO DE CAJA CON HTML Y CSS",
+    "date": "21 abr"
+  },
+  {
+    "key": "ev8",
+    "label": "Contenedores",
+    "full": "ACTIVIDAD CON CONTENEDOR Y CAJAS",
+    "date": "25 abr"
+  },
+  {
+    "key": "ev9",
+    "label": "1er avance",
+    "full": "ENTREGA DEL PRIMER AVANCE DEL PROYECTO (PAGINA WEB)",
+    "date": "29 abr"
+  }
+];
+const EVAL_KEYS = EVAL_COLUMNS.map(c => c.key);
+
+let estudiantes = [
+  {
+    "codigo": "202312496k",
+    "apellidos": "ZAPATA SALAS",
+    "nombres": "MARIA ESTHER",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 88.9,
+    "promedio": 15.0,
+    "ev1": 13.0,
+    "ev2": 16.0,
+    "ev3": 15.0,
+    "ev4": 15.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 15.0,
+    "ev8": 16.0,
+    "ev9": 15.0
+  },
+  {
+    "codigo": "201804621a",
+    "apellidos": "PUMA QUISPE",
+    "nombres": "DENNYS AROON",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 88.9,
+    "promedio": 14.75,
+    "ev1": 13.0,
+    "ev2": 16.0,
+    "ev3": 15.0,
+    "ev4": 15.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 14.0,
+    "ev8": 15.0,
+    "ev9": 15.0
+  },
+  {
+    "codigo": "202300232b",
+    "apellidos": "ROCHA HUAMAN",
+    "nombres": "RENZO DAVID",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 88.9,
+    "promedio": 14.75,
+    "ev1": 13.0,
+    "ev2": 16.0,
+    "ev3": 15.0,
+    "ev4": 15.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 14.0,
+    "ev8": 15.0,
+    "ev9": 15.0
+  },
+  {
+    "codigo": "202214210d",
+    "apellidos": "FERRO PFUÑO",
+    "nombres": "JIMMY ANHELO",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 88.9,
+    "promedio": 14.62,
+    "ev1": 13.0,
+    "ev2": 16.0,
+    "ev3": 15.0,
+    "ev4": 15.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 14.0,
+    "ev8": 15.0,
+    "ev9": 14.0
+  },
+  {
+    "codigo": "202300234k",
+    "apellidos": "MICHE QUISPE",
+    "nombres": "JOSE ROSEL",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 88.9,
+    "promedio": 14.62,
+    "ev1": 13.0,
+    "ev2": 16.0,
+    "ev3": 15.0,
+    "ev4": 15.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 14.0,
+    "ev8": 15.0,
+    "ev9": 14.0
+  },
+  {
+    "codigo": "202101974a",
+    "apellidos": "POMPILLA YEPEZ",
+    "nombres": "HERBER HUMBERTO",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 88.9,
+    "promedio": 14.62,
+    "ev1": 13.0,
+    "ev2": 16.0,
+    "ev3": 15.0,
+    "ev4": 15.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 14.0,
+    "ev8": 15.0,
+    "ev9": 14.0
+  },
+  {
+    "codigo": "202214211c",
+    "apellidos": "QUISPE GAMEZ",
+    "nombres": "KEYSY MARIL",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 88.9,
+    "promedio": 14.62,
+    "ev1": 13.0,
+    "ev2": 16.0,
+    "ev3": 15.0,
+    "ev4": 15.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 14.0,
+    "ev8": 15.0,
+    "ev9": 14.0
+  },
+  {
+    "codigo": "202313029e",
+    "apellidos": "QUISPITUPA CCAMA",
+    "nombres": "ISRAEL FARAON",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 88.9,
+    "promedio": 14.62,
+    "ev1": 13.0,
+    "ev2": 16.0,
+    "ev3": 15.0,
+    "ev4": 15.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 14.0,
+    "ev8": 15.0,
+    "ev9": 14.0
+  },
+  {
+    "codigo": "202212633d",
+    "apellidos": "TTITO LLAMACCHIMA",
+    "nombres": "ALDAIR JUNIOR",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 88.9,
+    "promedio": 14.62,
+    "ev1": 13.0,
+    "ev2": 16.0,
+    "ev3": 15.0,
+    "ev4": 15.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 14.0,
+    "ev8": 15.0,
+    "ev9": 14.0
+  },
+  {
+    "codigo": "202214221a",
+    "apellidos": "CARRASCO RAMOS",
+    "nombres": "NILTON",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 88.9,
+    "promedio": 14.5,
+    "ev1": 12.0,
+    "ev2": 16.0,
+    "ev3": 15.0,
+    "ev4": 15.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 14.0,
+    "ev8": 15.0,
+    "ev9": 14.0
+  },
+  {
+    "codigo": "202100941c",
+    "apellidos": "NAYHUA HUAMAN",
+    "nombres": "DANTE",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 88.9,
+    "promedio": 14.5,
+    "ev1": 13.0,
+    "ev2": 16.0,
+    "ev3": 15.0,
+    "ev4": 15.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 14.0,
+    "ev8": 15.0,
+    "ev9": 13.0
+  },
+  {
+    "codigo": "202300235j",
+    "apellidos": "FERNANDEZ CACERES",
+    "nombres": "FERNANDO GONZALO",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 88.9,
+    "promedio": 14.38,
+    "ev1": 14.0,
+    "ev2": 16.0,
+    "ev3": 15.0,
+    "ev4": 15.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 14.0,
+    "ev8": 15.0,
+    "ev9": 11.0
+  },
+  {
+    "codigo": "202312922c",
+    "apellidos": "SILVA OLIVERA",
+    "nombres": "NAHUM ALAIN",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 88.9,
+    "promedio": 14.38,
+    "ev1": 13.0,
+    "ev2": 16.0,
+    "ev3": 15.0,
+    "ev4": 15.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 14.0,
+    "ev8": 15.0,
+    "ev9": 12.0
+  },
+  {
+    "codigo": "202300562i",
+    "apellidos": "PUGA ANCCO",
+    "nombres": "WILDER",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 88.9,
+    "promedio": 14.25,
+    "ev1": 13.0,
+    "ev2": 16.0,
+    "ev3": 15.0,
+    "ev4": 11.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 14.0,
+    "ev8": 15.0,
+    "ev9": 15.0
+  },
+  {
+    "codigo": "202312825c",
+    "apellidos": "QUISPE SAICO",
+    "nombres": "JOSE MANUEL",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 88.9,
+    "promedio": 14.12,
+    "ev1": 13.0,
+    "ev2": 16.0,
+    "ev3": 15.0,
+    "ev4": 15.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 15.0,
+    "ev8": 13.0,
+    "ev9": 11.0
+  },
+  {
+    "codigo": "202212541g",
+    "apellidos": "SOTELO LEON",
+    "nombres": "RAUL",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 88.9,
+    "promedio": 14.12,
+    "ev1": 13.0,
+    "ev2": 16.0,
+    "ev3": 12.0,
+    "ev4": 15.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 14.0,
+    "ev8": 15.0,
+    "ev9": 13.0
+  },
+  {
+    "codigo": "202214206k",
+    "apellidos": "VARGAS GUTIERREZ",
+    "nombres": "ERICK DANIEL",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 88.9,
+    "promedio": 14.12,
+    "ev1": 13.0,
+    "ev2": 16.0,
+    "ev3": 15.0,
+    "ev4": 11.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 14.0,
+    "ev8": 15.0,
+    "ev9": 14.0
+  },
+  {
+    "codigo": "202214226g",
+    "apellidos": "SALAZAR LLAVILLA",
+    "nombres": "JOSEPH",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 88.9,
+    "promedio": 14.0,
+    "ev1": 13.0,
+    "ev2": 16.0,
+    "ev3": 11.0,
+    "ev4": 15.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 14.0,
+    "ev8": 15.0,
+    "ev9": 13.0
+  },
+  {
+    "codigo": "202101124b",
+    "apellidos": "SILVA SALAS",
+    "nombres": "MELVIL",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 88.9,
+    "promedio": 13.62,
+    "ev1": 13.0,
+    "ev2": 16.0,
+    "ev3": 11.0,
+    "ev4": 11.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 14.0,
+    "ev8": 15.0,
+    "ev9": 14.0
+  },
+  {
+    "codigo": "202313001i",
+    "apellidos": "YEPEZ VARGAS",
+    "nombres": "FRANCO CARLO",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 88.9,
+    "promedio": 13.5,
+    "ev1": 13.0,
+    "ev2": 12.0,
+    "ev3": 12.0,
+    "ev4": 12.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 14.0,
+    "ev8": 15.0,
+    "ev9": 15.0
+  },
+  {
+    "codigo": "202300260i",
+    "apellidos": "FERRO ARCE",
+    "nombres": "CRIST ANTHONY",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 77.8,
+    "promedio": 13.29,
+    "ev1": 14.0,
+    "ev2": 12.0,
+    "ev3": 12.0,
+    "ev4": 12.0,
+    "ev5": null,
+    "ev6": null,
+    "ev7": 14.0,
+    "ev8": 15.0,
+    "ev9": 14.0
+  },
+  {
+    "codigo": "201801646f",
+    "apellidos": "BRONCANO ZAMATA",
+    "nombres": "ERICK ALEXANDER",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 88.9,
+    "promedio": 13.25,
+    "ev1": 12.0,
+    "ev2": 12.0,
+    "ev3": 12.0,
+    "ev4": 12.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 14.0,
+    "ev8": 15.0,
+    "ev9": 14.0
+  },
+  {
+    "codigo": "202000198e",
+    "apellidos": "PUMACAHUA OCHOA",
+    "nombres": "HEBERTH RAUL",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 88.9,
+    "promedio": 13.25,
+    "ev1": 13.0,
+    "ev2": 12.0,
+    "ev3": 12.0,
+    "ev4": 12.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 14.0,
+    "ev8": 15.0,
+    "ev9": 13.0
+  },
+  {
+    "codigo": "202300251j",
+    "apellidos": "MAMANI ARIAS",
+    "nombres": "SHARELYN ELIZABETH",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 77.8,
+    "promedio": 13.0,
+    "ev1": 0.0,
+    "ev2": 16.0,
+    "ev3": 15.0,
+    "ev4": 14.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 14.0,
+    "ev8": 15.0,
+    "ev9": 15.0
+  },
+  {
+    "codigo": "202312992k",
+    "apellidos": "LLOCLLE QUISPE",
+    "nombres": "MAYCOL PAUL",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 77.8,
+    "promedio": 12.88,
+    "ev1": 13.0,
+    "ev2": 16.0,
+    "ev3": 15.0,
+    "ev4": 15.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 14.0,
+    "ev8": 15.0,
+    "ev9": 0.0
+  },
+  {
+    "codigo": "202101941j",
+    "apellidos": "ORTIZ PACHACUTE",
+    "nombres": "HERMINIA",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 77.8,
+    "promedio": 12.88,
+    "ev1": 13.0,
+    "ev2": 16.0,
+    "ev3": 15.0,
+    "ev4": 15.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 0.0,
+    "ev8": 15.0,
+    "ev9": 14.0
+  },
+  {
+    "codigo": "202312945g",
+    "apellidos": "PACOCHA ORCCOSUPA",
+    "nombres": "JOSE FELICIANO",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 77.8,
+    "promedio": 12.88,
+    "ev1": 13.0,
+    "ev2": 16.0,
+    "ev3": 15.0,
+    "ev4": 15.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 14.0,
+    "ev8": 15.0,
+    "ev9": 0.0
+  },
+  {
+    "codigo": "202300276a",
+    "apellidos": "HUAMAN HUANCA",
+    "nombres": "DALIA KAYARA",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 77.8,
+    "promedio": 12.75,
+    "ev1": 12.0,
+    "ev2": 16.0,
+    "ev3": 15.0,
+    "ev4": 15.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 0.0,
+    "ev8": 15.0,
+    "ev9": 14.0
+  },
+  {
+    "codigo": "202300302e",
+    "apellidos": "HUANCA COILA",
+    "nombres": "YESENIA YAMILET",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 77.8,
+    "promedio": 12.75,
+    "ev1": 13.0,
+    "ev2": 16.0,
+    "ev3": 15.0,
+    "ev4": 15.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 0.0,
+    "ev8": 15.0,
+    "ev9": 13.0
+  },
+  {
+    "codigo": "202312966b",
+    "apellidos": "COA ARAGON",
+    "nombres": "ERIK LUIS",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 77.8,
+    "promedio": 12.62,
+    "ev1": 12.0,
+    "ev2": 16.0,
+    "ev3": 15.0,
+    "ev4": 15.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 0.0,
+    "ev8": 15.0,
+    "ev9": 13.0
+  },
+  {
+    "codigo": "202102094i",
+    "apellidos": "CHALLCO CALLAÑAUPA",
+    "nombres": "EDWIN RIVALDO",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 77.8,
+    "promedio": 12.25,
+    "ev1": 12.0,
+    "ev2": 16.0,
+    "ev3": 15.0,
+    "ev4": 11.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 0.0,
+    "ev8": 15.0,
+    "ev9": 14.0
+  },
+  {
+    "codigo": "202214227f",
+    "apellidos": "LUCERO VENTURO",
+    "nombres": "HARETH JAVIER",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 77.8,
+    "promedio": 12.25,
+    "ev1": 13.0,
+    "ev2": 16.0,
+    "ev3": 15.0,
+    "ev4": 11.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 14.0,
+    "ev8": 0.0,
+    "ev9": 14.0
+  },
+  {
+    "codigo": "202312902g",
+    "apellidos": "AYME MAMANI",
+    "nombres": "JOSEPH BRAYAN",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 77.8,
+    "promedio": 12.12,
+    "ev1": 0.0,
+    "ev2": 16.0,
+    "ev3": 15.0,
+    "ev4": 11.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 14.0,
+    "ev8": 15.0,
+    "ev9": 11.0
+  },
+  {
+    "codigo": "202312505e",
+    "apellidos": "MEZA HUARCAYA",
+    "nombres": "DENIS ALEXANDER",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 66.7,
+    "promedio": 11.0,
+    "ev1": 13.0,
+    "ev2": 16.0,
+    "ev3": 0.0,
+    "ev4": 15.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 14.0,
+    "ev8": 0.0,
+    "ev9": 15.0
+  },
+  {
+    "codigo": "202312823e",
+    "apellidos": "OCAMPO TORRES",
+    "nombres": "SALVADOR RICARDO",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 66.7,
+    "promedio": 11.0,
+    "ev1": 13.0,
+    "ev2": 16.0,
+    "ev3": 0.0,
+    "ev4": 15.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 14.0,
+    "ev8": 15.0,
+    "ev9": 0.0
+  },
+  {
+    "codigo": "202214236e",
+    "apellidos": "PINARES HUAMANI",
+    "nombres": "MELISSA KAREN",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 66.7,
+    "promedio": 11.0,
+    "ev1": 13.0,
+    "ev2": 0.0,
+    "ev3": 15.0,
+    "ev4": 15.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 0.0,
+    "ev8": 15.0,
+    "ev9": 15.0
+  },
+  {
+    "codigo": "202214224i",
+    "apellidos": "HUAMAN CONDORHUACHO",
+    "nombres": "EFRAIN",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 66.7,
+    "promedio": 10.5,
+    "ev1": 12.0,
+    "ev2": 16.0,
+    "ev3": 11.0,
+    "ev4": 15.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 0.0,
+    "ev8": 15.0,
+    "ev9": 0.0
+  },
+  {
+    "codigo": "202300253h",
+    "apellidos": "CONDORHUACHO VALDEIGLESIAS",
+    "nombres": "WALDHER",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 66.7,
+    "promedio": 10.25,
+    "ev1": 0.0,
+    "ev2": 12.0,
+    "ev3": 12.0,
+    "ev4": 0.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 14.0,
+    "ev8": 15.0,
+    "ev9": 14.0
+  },
+  {
+    "codigo": "201801279h",
+    "apellidos": "RODRIGUEZ BERNA",
+    "nombres": "OSCAR JESUS",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 66.7,
+    "promedio": 10.12,
+    "ev1": 13.0,
+    "ev2": 0.0,
+    "ev3": 0.0,
+    "ev4": 11.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 14.0,
+    "ev8": 15.0,
+    "ev9": 13.0
+  },
+  {
+    "codigo": "202213868e",
+    "apellidos": "MARCAS GALLEGOS",
+    "nombres": "JOSE FRANCHESCO",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 55.6,
+    "promedio": 10.0,
+    "ev1": 0.0,
+    "ev2": 16.0,
+    "ev3": 11.0,
+    "ev4": 0.0,
+    "ev5": null,
+    "ev6": null,
+    "ev7": 14.0,
+    "ev8": 15.0,
+    "ev9": 14.0
+  },
+  {
+    "codigo": "202300233a",
+    "apellidos": "FARFAN FERRO",
+    "nombres": "WALTHER",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 55.6,
+    "promedio": 9.57,
+    "ev1": 12.0,
+    "ev2": 0.0,
+    "ev3": 0.0,
+    "ev4": 12.0,
+    "ev5": null,
+    "ev6": null,
+    "ev7": 14.0,
+    "ev8": 15.0,
+    "ev9": 14.0
+  },
+  {
+    "codigo": "202312894a",
+    "apellidos": "ALARCON OTAZU",
+    "nombres": "ALEXANDER GABRIEL",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 55.6,
+    "promedio": 9.12,
+    "ev1": 12.0,
+    "ev2": 16.0,
+    "ev3": 15.0,
+    "ev4": 15.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 0.0,
+    "ev8": 0.0,
+    "ev9": 0.0
+  },
+  {
+    "codigo": "202300240b",
+    "apellidos": "CHILE CJUNO",
+    "nombres": "PEDRO AQUILES",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 55.6,
+    "promedio": 9.12,
+    "ev1": 12.0,
+    "ev2": 16.0,
+    "ev3": 15.0,
+    "ev4": 15.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 0.0,
+    "ev8": 0.0,
+    "ev9": 0.0
+  },
+  {
+    "codigo": "202214222k",
+    "apellidos": "YAPURA RUPAYLLA",
+    "nombres": "JOEL",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 55.6,
+    "promedio": 9.0,
+    "ev1": 13.0,
+    "ev2": 0.0,
+    "ev3": 0.0,
+    "ev4": 0.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 14.0,
+    "ev8": 15.0,
+    "ev9": 15.0
+  },
+  {
+    "codigo": "202101969f",
+    "apellidos": "NINA OROS",
+    "nombres": "EMANUEL",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 44.4,
+    "promedio": 8.83,
+    "ev1": 0.0,
+    "ev2": 12.0,
+    "ev3": 12.0,
+    "ev4": null,
+    "ev5": null,
+    "ev6": null,
+    "ev7": 14.0,
+    "ev8": 15.0,
+    "ev9": 0.0
+  },
+  {
+    "codigo": "202300236i",
+    "apellidos": "LLALLA PEREZ",
+    "nombres": "RUTH YULEYSSI",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 44.4,
+    "promedio": 8.71,
+    "ev1": 0.0,
+    "ev2": 16.0,
+    "ev3": 15.0,
+    "ev4": 15.0,
+    "ev5": null,
+    "ev6": null,
+    "ev7": 0.0,
+    "ev8": 15.0,
+    "ev9": 0.0
+  },
+  {
+    "codigo": "202312993j",
+    "apellidos": "FLOREZ CCOPA",
+    "nombres": "KHALEF GHIOVANNY",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 44.4,
+    "promedio": 8.57,
+    "ev1": 0.0,
+    "ev2": 16.0,
+    "ev3": 15.0,
+    "ev4": 0.0,
+    "ev5": null,
+    "ev6": null,
+    "ev7": 14.0,
+    "ev8": 15.0,
+    "ev9": 0.0
+  },
+  {
+    "codigo": "202312883d",
+    "apellidos": "VILLAVICENCIO TACO",
+    "nombres": "MILAGROS ESTEPHANY",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 44.4,
+    "promedio": 8.43,
+    "ev1": 0.0,
+    "ev2": 16.0,
+    "ev3": 0.0,
+    "ev4": 0.0,
+    "ev5": null,
+    "ev6": null,
+    "ev7": 14.0,
+    "ev8": 15.0,
+    "ev9": 14.0
+  },
+  {
+    "codigo": "201723639k",
+    "apellidos": "HUILLCA BALLON",
+    "nombres": "JHAIR HOTMAN",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 44.4,
+    "promedio": 8.29,
+    "ev1": 0.0,
+    "ev2": 16.0,
+    "ev3": 15.0,
+    "ev4": 12.0,
+    "ev5": null,
+    "ev6": null,
+    "ev7": 0.0,
+    "ev8": 15.0,
+    "ev9": 0.0
+  },
+  {
+    "codigo": "202212628a",
+    "apellidos": "CRUZ TINTAYA",
+    "nombres": "NELSON",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 55.6,
+    "promedio": 8.25,
+    "ev1": 12.0,
+    "ev2": 16.0,
+    "ev3": 11.0,
+    "ev4": 12.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 0.0,
+    "ev8": 0.0,
+    "ev9": 0.0
+  },
+  {
+    "codigo": "202312707h",
+    "apellidos": "CORDOVA PALOMINO",
+    "nombres": "JOHN ANDER",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 55.6,
+    "promedio": 8.12,
+    "ev1": 12.0,
+    "ev2": 16.0,
+    "ev3": 11.0,
+    "ev4": 11.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 0.0,
+    "ev8": 0.0,
+    "ev9": 0.0
+  },
+  {
+    "codigo": "202100948g",
+    "apellidos": "AMAO ATAUCHI",
+    "nombres": "UBHER",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 55.6,
+    "promedio": 7.88,
+    "ev1": 12.0,
+    "ev2": 12.0,
+    "ev3": 12.0,
+    "ev4": 12.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 0.0,
+    "ev8": 0.0,
+    "ev9": 0.0
+  },
+  {
+    "codigo": "202213505g",
+    "apellidos": "GUILLEN LOPE",
+    "nombres": "JHOE SANTIAGO",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 44.4,
+    "promedio": 7.71,
+    "ev1": 0.0,
+    "ev2": 16.0,
+    "ev3": 0.0,
+    "ev4": 12.0,
+    "ev5": null,
+    "ev6": null,
+    "ev7": 14.0,
+    "ev8": 0.0,
+    "ev9": 12.0
+  },
+  {
+    "codigo": "202312866e",
+    "apellidos": "CUSIHUAMAN PILLCO",
+    "nombres": "PAUL DIEGO",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 44.4,
+    "promedio": 7.62,
+    "ev1": 0.0,
+    "ev2": 16.0,
+    "ev3": 15.0,
+    "ev4": 15.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 0.0,
+    "ev8": 0.0,
+    "ev9": 0.0
+  },
+  {
+    "codigo": "202102056d",
+    "apellidos": "CARRASCO ZAPATA",
+    "nombres": "NILTON JOSE",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 22.2,
+    "promedio": 3.86,
+    "ev1": 0.0,
+    "ev2": 0.0,
+    "ev3": 0.0,
+    "ev4": 0.0,
+    "ev5": null,
+    "ev6": null,
+    "ev7": 14.0,
+    "ev8": 0.0,
+    "ev9": 13.0
+  },
+  {
+    "codigo": "202100935a",
+    "apellidos": "CHACNAMA LEON",
+    "nombres": "ROY CIPRIAM",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 22.2,
+    "promedio": 3.38,
+    "ev1": 12.0,
+    "ev2": 0.0,
+    "ev3": 0.0,
+    "ev4": 0.0,
+    "ev5": 15.0,
+    "ev6": null,
+    "ev7": 0.0,
+    "ev8": 0.0,
+    "ev9": 0.0
+  },
+  {
+    "codigo": "202000181c",
+    "apellidos": "CCARITA GUZMAN",
+    "nombres": "MICHAEL KENDALL",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 0.0,
+    "promedio": 0.0,
+    "ev1": 0.0,
+    "ev2": 0.0,
+    "ev3": 0.0,
+    "ev4": 0.0,
+    "ev5": null,
+    "ev6": null,
+    "ev7": 0.0,
+    "ev8": 0.0,
+    "ev9": 0.0
+  },
+  {
+    "codigo": "202300874g",
+    "apellidos": "CUARESMA TAIPE",
+    "nombres": "CLEOFE SHAMIRA",
+    "sexo": "N/D",
+    "ciclo": "6A",
+    "asistencia": 0.0,
+    "promedio": 0.0,
+    "ev1": 0.0,
+    "ev2": 0.0,
+    "ev3": 0.0,
+    "ev4": 0.0,
+    "ev5": null,
+    "ev6": null,
+    "ev7": 0.0,
+    "ev8": 0.0,
+    "ev9": 0.0
+  }
+];
+
+function valorNota(v){
+  return v !== null && v !== undefined && v !== "" && !Number.isNaN(Number(v));
+}
+function promedioNotas(vals){
+  const nums = vals.filter(valorNota).map(Number);
+  if(!nums.length) return 0;
+  return Math.round((nums.reduce((s,n)=>s+n,0)/nums.length)*100)/100;
+}
+function calcularPromedio(e){
+  if(valorNota(e.promedio)) return Math.round(Number(e.promedio)*100)/100;
+  return promedioNotas(EVAL_KEYS.map(k=>e[k]));
+}
+function calcularCumplimiento(e){
+  const total = EVAL_KEYS.length || 1;
+  const hechos = EVAL_KEYS.filter(k => valorNota(e[k]) && Number(e[k]) > 0).length;
+  return Math.round((hechos/total*100)*10)/10;
+}
+function quitarTildes(txt){
+  return String(txt || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
+}
+function inferirSexoPorNombre(nombres){
+  /* Clasificación referencial para visualización estadística. No reemplaza un dato oficial de matrícula. */
+  const tokens = quitarTildes(nombres).split(/\s+/).filter(Boolean);
+  const femeninos = new Set([
+    "MARIA","ESTHER","KEYSY","MARIL","SHARELYN","ELIZABETH","HERMINIA","DALIA","KAYARA",
+    "YESENIA","YAMILET","MELISSA","KAREN","RUTH","YULEYSSI","MILAGROS","ESTEPHANY",
+    "CLEOFE","SHAMIRA","LUZ","ROSA","ANA","CARMEN","FLOR","XIOMARA","DIANA","KARINA"
+  ]);
+  const masculinos = new Set([
+    "DENNYS","DENIS","RENZO","DAVID","JIMMY","ANHELO","JOSE","ROSEL","HERBER","HUMBERTO",
+    "ISRAEL","FARAON","ALDAIR","JUNIOR","NILTON","DANTE","FERNANDO","GONZALO","NAHUM","ALAIN",
+    "WILDER","MANUEL","RAUL","ERICK","DANIEL","JOSEPH","MELVIL","FRANCO","CARLO","CRIST",
+    "ANTHONY","ALEXANDER","HEBERTH","MAYCOL","PAUL","FELICIANO","ERIK","LUIS","EDWIN","RIVALDO",
+    "HARETH","JAVIER","BRAYAN","SALVADOR","RICARDO","EFRAIN","WALDHER","OSCAR","JESUS","FRANCHESCO",
+    "WALTHER","GABRIEL","PEDRO","AQUILES","JOEL","EMANUEL","KHALEF","GHIOVANNY","JHAIR","HOTMAN",
+    "NELSON","JOHN","ANDER","UBHER","JHOE","SANTIAGO","DIEGO","ROY","CIPRIAM","MICHAEL","KENDALL"
+  ]);
+  if(tokens.some(t => femeninos.has(t))) return "F";
+  if(tokens.some(t => masculinos.has(t))) return "M";
+  return "N/D";
+}
+function actualizarPromedios(){
+  estudiantes.forEach(e=>{
+    e.promedio = calcularPromedio(e);
+    e.estado = e.promedio >= 11 ? "Aprobado" : "Desaprobado";
+    e.sexo = inferirSexoPorNombre(e.nombres);
+    e.ciclo = e.ciclo || "6A";
+    e.asistencia = calcularCumplimiento(e);
+  });
+}
+actualizarPromedios();
+
+
+/* ============================================================
+   ESTADO DE FILTROS
+============================================================ */
+const filtros = {
+  sexo:new Set(),
+  estado:new Set(),
+  ciclo:new Set(),
+  rango:new Set(),
+  busqueda:""
+};
+
+function getFiltrados(){
+  return estudiantes.filter(e=>{
+    if(filtros.sexo.size && !filtros.sexo.has(e.sexo)) return false;
+    if(filtros.estado.size && !filtros.estado.has(e.estado)) return false;
+    if(filtros.ciclo.size && !filtros.ciclo.has(e.ciclo)) return false;
+    if(filtros.rango.size){
+      const ok = [...filtros.rango].some(r=>{
+        const [a,b]=r.split("-").map(Number);
+        return e.promedio>=a && e.promedio<=b;
+      });
+      if(!ok) return false;
+    }
+    if(filtros.busqueda){
+      const q = filtros.busqueda.toLowerCase();
+      const t = (e.codigo+" "+e.apellidos+" "+e.nombres).toLowerCase();
+      if(!t.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+/* ============================================================
+   CHIPS / SLICERS
+============================================================ */
+function inicializarChipsSexo(){
+  const orden = ["F", "M", "N/D"];
+  const sexos = [...new Set(estudiantes.map(e=>e.sexo || "N/D"))].sort((a,b)=>orden.indexOf(a)-orden.indexOf(b));
+  const cont = document.getElementById("chips-sexo");
+  cont.innerHTML="";
+  const nombresSexo = {"M":"Hombres", "F":"Mujeres", "N/D":"No identificado"};
+  sexos.forEach(s=>{
+    const sp=document.createElement("span");
+    sp.className="chip" + (s==="F" ? " red" : "");
+    sp.dataset.val=s; sp.textContent=nombresSexo[s] || s;
+    cont.appendChild(sp);
+  });
+}
+function inicializarChipsCiclo(){
+  const ciclos = [...new Set(estudiantes.map(e=>e.ciclo))].sort();
+  const cont = document.getElementById("chips-ciclo");
+  cont.innerHTML="";
+  ciclos.forEach(c=>{
+    const sp=document.createElement("span");
+    sp.className="chip";sp.dataset.val=c;sp.textContent=c;
+    cont.appendChild(sp);
+  });
+}
+function bindChips(){
+  document.querySelectorAll(".chips .chip").forEach(chip=>{
+    chip.onclick=()=>{
+      const grupo = chip.parentElement.id.replace("chips-","");
+      const set = filtros[grupo];
+      const val = chip.dataset.val;
+      if(set.has(val)){set.delete(val);chip.classList.remove("active");}
+      else{set.add(val);chip.classList.add("active");}
+      render();
+    };
+  });
+}
+document.getElementById("busqueda").addEventListener("input",e=>{
+  filtros.busqueda = e.target.value.trim();
+  render();
+});
+function limpiarFiltros(){
+  filtros.sexo.clear();filtros.estado.clear();
+  filtros.ciclo.clear();filtros.rango.clear();filtros.busqueda="";
+  document.querySelectorAll(".chip.active").forEach(c=>c.classList.remove("active"));
+  document.getElementById("busqueda").value="";
+  render();
+}
+
+/* ============================================================
+   GRÁFICOS - Chart.js
+============================================================ */
+const charts = {};
+const COLORS = {
+  azul:"#1d4e89", azulC:"#5fa8d3", azul2:"#2a6db0", azul3:"#0b2545",
+  rojo:"#d62828", rojo2:"#a4161a", rojo3:"#e63946",
+  verde:"#2a9d8f", amarillo:"#f6bd60", gris:"#adb5bd"
+};
+
+function ensureChart(id,cfg){
+  try{
+    if(typeof Chart === "undefined"){
+      const el = document.getElementById(id);
+      if(el && el.parentElement){
+        el.parentElement.innerHTML = '<div style="padding:20px;text-align:center;color:#a4161a;font-size:11px">⚠ Chart.js no se pudo cargar (¿sin internet?). Los KPIs y la tabla siguen funcionando.</div>';
+      }
+      return;
+    }
+    if(charts[id]) charts[id].destroy();
+    const ctx=document.getElementById(id).getContext("2d");
+    charts[id]=new Chart(ctx,cfg);
+  }catch(err){
+    console.error("Error en gráfico "+id+":",err);
+  }
+}
+
+/* Histograma de notas */
+function chartHistograma(data){
+  const bins=[0,0,0,0,0,0,0,0,0,0,0]; // 0-1, 2-3, ..., 18-20
+  const labels=["0-2","3-4","5-6","7-8","9-10","11-12","13-14","15-16","17-18","19-20"];
+  const colors=[];
+  data.forEach(e=>{
+    const p=e.promedio;
+    let i;
+    if(p<=2)i=0;else if(p<=4)i=1;else if(p<=6)i=2;else if(p<=8)i=3;
+    else if(p<=10)i=4;else if(p<=12)i=5;else if(p<=14)i=6;else if(p<=16)i=7;
+    else if(p<=18)i=8;else i=9;
+    bins[i]++;
+  });
+  for(let i=0;i<labels.length;i++){
+    colors.push(i<5?COLORS.rojo3:(i<7?COLORS.amarillo:COLORS.verde));
+  }
+  ensureChart("chartHist",{
+    type:"bar",
+    data:{labels,datasets:[{label:"Estudiantes",data:bins.slice(0,labels.length),backgroundColor:colors,borderRadius:4,borderWidth:1,borderColor:"#fff"}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{title:c=>"Rango: "+c[0].label}}},
+      scales:{y:{beginAtZero:true,ticks:{stepSize:1},grid:{color:"#eef2f7"}},x:{grid:{display:false}}}
+    }
+  });
+}
+
+/* Donut estado */
+function chartEstadoFn(data){
+  const apr=data.filter(e=>e.estado==="Aprobado").length;
+  const des=data.filter(e=>e.estado==="Desaprobado").length;
+  const total = apr + des;
+  const pApr = total ? (apr/total*100) : 0;
+  const pDes = total ? (des/total*100) : 0;
+  const pctBox = document.getElementById("estado-porcentaje");
+  if(pctBox){
+    pctBox.innerHTML = `<span class="apr">Aprobados: ${pApr.toFixed(1)}%</span> · <span class="des">Desaprobados: ${pDes.toFixed(1)}%</span>`;
+  }
+  ensureChart("chartEstado",{
+    type:"doughnut",
+    data:{labels:["Aprobado","Desaprobado"],datasets:[{data:[apr,des],backgroundColor:[COLORS.verde,COLORS.rojo3],borderColor:"#fff",borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:"62%",
+      plugins:{
+        legend:{position:"bottom",labels:{boxWidth:10,font:{size:10}}},
+        tooltip:{callbacks:{label:c=>c.label+": "+c.parsed+" ("+(c.parsed/(total||1)*100).toFixed(1)+"%)"}}
+      }
+    },
+    plugins:[{
+      id:"estadoLabels",
+      afterDatasetsDraw(chart){
+        const {ctx} = chart;
+        const meta = chart.getDatasetMeta(0);
+        ctx.save();
+        ctx.font = "bold 11px Segoe UI";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        meta.data.forEach((arc, i)=>{
+          const val = chart.data.datasets[0].data[i];
+          if(!val || !total) return;
+          const p = arc.tooltipPosition();
+          ctx.fillStyle = "#ffffff";
+          ctx.fillText((val/total*100).toFixed(1)+"%", p.x, p.y);
+        });
+        const area = chart.chartArea;
+        ctx.fillStyle = "#0b2545";
+        ctx.font = "bold 18px Segoe UI";
+        ctx.fillText(total, (area.left+area.right)/2, (area.top+area.bottom)/2-4);
+        ctx.font = "10px Segoe UI";
+        ctx.fillStyle = "#6c757d";
+        ctx.fillText("estudiantes", (area.left+area.right)/2, (area.top+area.bottom)/2+14);
+        ctx.restore();
+      }
+    }]
+  });
+}
+
+/* Promedio por sexo */
+function chartSexoFn(data){
+  const grupos=[...new Set(data.map(e=>e.sexo || "N/D"))].sort();
+  const nombresSexo = {"M":"Hombres", "F":"Mujeres", "N/D":"No identificado"};
+  const palette=[COLORS.azul2,COLORS.rojo3,COLORS.verde,COLORS.amarillo,COLORS.azulC,COLORS.gris];
+  const labels=[];
+  const valores=[];
+  grupos.forEach(g=>{
+    const arr=data.filter(e=>(e.sexo||"N/D")===g);
+    const prom = arr.length? arr.reduce((s,e)=>s+e.promedio,0)/arr.length : 0;
+    labels.push((nombresSexo[g]||g)+" ("+arr.length+")");
+    valores.push(Number(prom.toFixed(2)));
+  });
+  ensureChart("chartSexo",{
+    type:"bar",
+    data:{labels:labels.length?labels:["Sin datos"],
+      datasets:[{label:"Promedio",data:valores.length?valores:[0],
+        backgroundColor:(valores.length?valores:[0]).map((_,i)=>palette[i%palette.length]),borderRadius:6}]},
+    options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:c=>"Promedio: "+Number(c.parsed.x).toFixed(2)+"/20"}}
+      },
+      scales:{x:{beginAtZero:true,max:20,grid:{color:"#eef2f7"}},y:{grid:{display:false}}}
+    }
+  });
+}
+
+/* Promedio por evaluación */
+function chartEvalsFn(data){
+  if(!data.length){
+    ensureChart("chartEvals",{type:"bar",data:{labels:[],datasets:[]},options:{responsive:true,maintainAspectRatio:false}});
+    return;
+  }
+  const evals=EVAL_KEYS;
+  const labels=EVAL_COLUMNS.map(c=>c.label);
+  const proms=evals.map(k=>{
+    const vals=data.map(e=>e[k]).filter(valorNota).map(Number);
+    return vals.length ? vals.reduce((s,n)=>s+n,0)/vals.length : 0;
+  });
+  ensureChart("chartEvals",{
+    type:"bar",
+    data:{labels,datasets:[
+      {type:"line",label:"Tendencia",data:proms,borderColor:COLORS.rojo,backgroundColor:"transparent",
+       borderWidth:2,pointBackgroundColor:COLORS.rojo,pointRadius:4,tension:.3,yAxisID:"y"},
+      {label:"Promedio",data:proms,backgroundColor:COLORS.azul2,borderRadius:4,yAxisID:"y"}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:"bottom",labels:{boxWidth:10,font:{size:10}}},
+        tooltip:{callbacks:{
+          title:c=>EVAL_COLUMNS[c[0].dataIndex]?.full || c[0].label,
+          label:c=>c.dataset.label+": "+Number(c.parsed.y).toFixed(2)+"/20"
+        }}
+      },
+      scales:{y:{beginAtZero:true,max:20,grid:{color:"#eef2f7"}}}
+    }
+  });
+}
+
+/* Cumplimiento */
+function chartAsistFn(data){
+  const prom = data.length? data.reduce((s,e)=>s+e.asistencia,0)/data.length : 0;
+  ensureChart("chartAsist",{
+    type:"doughnut",
+    data:{labels:["Cumplimiento","Falta"],datasets:[{
+      data:[prom.toFixed(1),(100-prom).toFixed(1)],
+      backgroundColor:[COLORS.azul2,"#e9ecef"],borderWidth:0
+    }]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:"75%",
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:c=>c.label+": "+c.parsed+"%"}}
+      }
+    },
+    plugins:[{id:"centerText",beforeDraw:(c)=>{
+      const {ctx,chartArea:{left,right,top,bottom}}=c;
+      ctx.save();
+      ctx.font="bold 22px Segoe UI";ctx.fillStyle="#0b2545";
+      ctx.textAlign="center";ctx.textBaseline="middle";
+      ctx.fillText(prom.toFixed(1)+"%",(left+right)/2,(top+bottom)/2-4);
+      ctx.font="11px Segoe UI";ctx.fillStyle="#6c757d";
+      ctx.fillText("Cumplimiento",(left+right)/2,(top+bottom)/2+16);
+      ctx.restore();
+    }}]
+  });
+}
+
+/* Radar Competencias */
+function chartRadarFn(data){
+  if(!data.length){
+    ensureChart("chartRadar",{type:"radar",data:{labels:[],datasets:[]},options:{responsive:true,maintainAspectRatio:false}});
+    return;
+  }
+  const proms = EVAL_KEYS.map(k=>{
+    const vals=data.map(e=>e[k]).filter(valorNota).map(Number);
+    return vals.length ? Number((vals.reduce((s,n)=>s+n,0)/vals.length).toFixed(2)) : 0;
+  });
+  ensureChart("chartRadar",{
+    type:"radar",
+    data:{labels:EVAL_COLUMNS.map(c=>c.label),
+      datasets:[{
+        label:"Curso",
+        data:proms,
+        backgroundColor:"rgba(29,78,137,0.2)",borderColor:COLORS.azul,
+        pointBackgroundColor:COLORS.rojo3,borderWidth:2
+      }]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}, tooltip:{callbacks:{title:c=>EVAL_COLUMNS[c[0].dataIndex]?.full || c[0].label}}},
+      scales:{r:{beginAtZero:true,max:20,ticks:{stepSize:5,backdropColor:"transparent",font:{size:9}},pointLabels:{font:{size:9}}}}
+    }
+  });
+}
+
+/* Línea: tendencia individual de promedios por evaluación (top 5) */
+function chartLineFn(data){
+  const evals=EVAL_KEYS;
+  const labels=EVAL_COLUMNS.map(c=>c.label);
+  const top5 = [...data].sort((a,b)=>b.promedio-a.promedio).slice(0,5);
+  const palette=[COLORS.azul,COLORS.rojo3,COLORS.verde,COLORS.amarillo,COLORS.azulC];
+  ensureChart("chartLine",{
+    type:"line",
+    data:{labels,datasets:top5.map((e,i)=>({
+      label:e.apellidos.split(" ")[0]+" "+(e.nombres.split(" ")[0]),
+      data:evals.map(k=>valorNota(e[k])?Number(e[k]):null),borderColor:palette[i],backgroundColor:palette[i]+"20",
+      tension:.25,borderWidth:2,pointRadius:3
+    }))},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:"bottom",labels:{boxWidth:10,font:{size:9}}}, tooltip:{callbacks:{title:c=>EVAL_COLUMNS[c[0].dataIndex]?.full || c[0].label}}},
+      scales:{y:{min:0,max:20,grid:{color:"#eef2f7"}}}
+    }
+  });
+}
+
+/* Scatter Cumplimiento vs Promedio */
+function chartScatterFn(data){
+  ensureChart("chartScatter",{
+    type:"scatter",
+    data:{datasets:[
+      {label:"Aprobado",data:data.filter(e=>e.estado==="Aprobado").map(e=>({x:e.asistencia,y:e.promedio,n:e.apellidos+" "+e.nombres})),
+       backgroundColor:COLORS.verde,pointRadius:5},
+      {label:"Desaprobado",data:data.filter(e=>e.estado==="Desaprobado").map(e=>({x:e.asistencia,y:e.promedio,n:e.apellidos+" "+e.nombres})),
+       backgroundColor:COLORS.rojo3,pointRadius:5}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:"bottom",labels:{boxWidth:10,font:{size:10}}},
+        tooltip:{callbacks:{label:c=>c.raw.n+" — Cumpl: "+c.parsed.x+"% | Prom: "+c.parsed.y}}
+      },
+      scales:{x:{title:{display:true,text:"Cumplimiento (%)"},min:0,max:100,grid:{color:"#eef2f7"}},
+              y:{title:{display:true,text:"Promedio Final"},min:0,max:20,grid:{color:"#eef2f7"}}}
+    }
+  });
+}
+
+/* TOP-N */
+function renderTopList(data){
+  const top=[...data].sort((a,b)=>b.promedio-a.promedio).slice(0,10);
+  const cont=document.getElementById("top-list");
+  cont.innerHTML="";
+  top.forEach((e,i)=>{
+    const cls=i===0?"gold":i===1?"silver":i===2?"bronze":"";
+    cont.innerHTML+=`<div class="top-row ${cls}" title="${e.codigo}">
+      <div class="pos">${i+1}</div>
+      <div>${e.apellidos}, ${e.nombres}</div>
+      <div class="nota">${e.promedio.toFixed(2)}</div>
+    </div>`;
+  });
+  if(!top.length) cont.innerHTML='<div style="text-align:center;color:#888;padding:14px">Sin datos</div>';
+}
+
+/* RIESGO */
+function renderRiesgo(data){
+  const r=[...data].filter(e=>e.promedio<11).sort((a,b)=>a.promedio-b.promedio);
+  const cont=document.getElementById("riesgo-list");
+  cont.innerHTML="";
+  r.forEach((e,i)=>{
+    cont.innerHTML+=`<div class="top-row riesgo-row" title="Código ${e.codigo} — Cumplimiento ${e.asistencia}%">
+      <div class="pos">!</div>
+      <div><b>${e.codigo}</b><br><span style="font-size:10px;color:#6c757d">Cumplimiento: ${e.asistencia}%</span></div>
+      <div class="nota">${e.promedio.toFixed(2)}</div>
+    </div>`;
+  });
+  if(!r.length) cont.innerHTML='<div style="text-align:center;color:#2a9d8f;padding:14px;font-weight:600">✓ Ningún estudiante en riesgo con los filtros actuales</div>';
+}
+
+/* TABLA */
+let tablaSort={key:"promedio",dir:-1};
+function renderTabla(data){
+  const tbody=document.getElementById("tabla-body");
+  const sorted=[...data].sort((a,b)=>{
+    const k=tablaSort.key,d=tablaSort.dir;
+    if(typeof a[k]==="number" || typeof b[k]==="number") return ((Number(a[k])||0)-(Number(b[k])||0))*d;
+    return String(a[k] ?? "").localeCompare(String(b[k] ?? ""))*d;
+  });
+  tbody.innerHTML="";
+  sorted.forEach(e=>{
+    const cls = e.estado==="Aprobado"?"aprobado":"desaprobado";
+    const evalTds = EVAL_KEYS.map(k=>`<td>${valorNota(e[k]) ? Number(e[k]).toFixed(0) : "-"}</td>`).join("");
+    tbody.innerHTML+=`<tr class="${cls}">
+      <td>${e.codigo}</td>
+      <td>${e.sexo}</td>
+      <td>${e.ciclo}</td>
+      ${evalTds}
+      <td>${Number(e.asistencia).toFixed(1)}%</td>
+      <td><b>${e.promedio.toFixed(2)}</b></td>
+      <td><span class="badge-est ${e.estado==="Aprobado"?"apr":"des"}">${e.estado}</span></td>
+    </tr>`;
+  });
+}
+document.querySelectorAll("#tabla-est th").forEach(th=>{
+  th.onclick=()=>{
+    const k=th.dataset.key;
+    if(tablaSort.key===k) tablaSort.dir*=-1;
+    else{tablaSort.key=k;tablaSort.dir=1;}
+    renderTabla(getFiltrados());
+  };
+});
+
+/* KPI */
+function renderKPIs(data){
+  const t=data.length;
+  const apr=data.filter(e=>e.estado==="Aprobado").length;
+  const des=t-apr;
+  const prom=t? data.reduce((s,e)=>s+e.promedio,0)/t : 0;
+  const max=t? data.reduce((m,e)=>e.promedio>m.promedio?e:m, data[0]) : null;
+  const min=t? data.reduce((m,e)=>e.promedio<m.promedio?e:m, data[0]) : null;
+  document.getElementById("kpi-total").textContent=t;
+  document.getElementById("kpi-prom").textContent=prom.toFixed(2);
+  document.getElementById("kpi-apr").textContent=apr;
+  document.getElementById("kpi-des").textContent=des;
+  document.getElementById("kpi-apr-d").textContent=t?(apr/t*100).toFixed(1)+"%":"0%";
+  document.getElementById("kpi-des-d").textContent=t?(des/t*100).toFixed(1)+"%":"0%";
+  document.getElementById("kpi-max").textContent=max?max.promedio.toFixed(2):"-";
+  document.getElementById("kpi-min").textContent=min?min.promedio.toFixed(2):"-";
+  document.getElementById("kpi-max-n").textContent=max?max.apellidos.split(" ")[0]+" "+max.nombres.split(" ")[0]:"-";
+  document.getElementById("kpi-min-n").textContent=min?min.apellidos.split(" ")[0]+" "+min.nombres.split(" ")[0]:"-";
+  document.getElementById("fs-count").textContent=t;
+  document.getElementById("fs-total").textContent=estudiantes.length;
+}
+
+/* RENDER MASTER */
+function render(){
+  const f=getFiltrados();
+  // Lo que NO depende de Chart.js primero
+  try{ renderKPIs(f); }catch(e){console.error(e);}
+  try{ renderTopList(f); }catch(e){console.error(e);}
+  try{ renderRiesgo(f); }catch(e){console.error(e);}
+  try{ renderTabla(f); }catch(e){console.error(e);}
+  // Charts
+  try{ chartHistograma(f); }catch(e){console.error(e);}
+  try{ chartEstadoFn(f); }catch(e){console.error(e);}
+  try{ chartSexoFn(f); }catch(e){console.error(e);}
+  try{ chartEvalsFn(f); }catch(e){console.error(e);}
+  try{ chartAsistFn(f); }catch(e){console.error(e);}
+  try{ chartRadarFn(f); }catch(e){console.error(e);}
+  try{ chartLineFn(f); }catch(e){console.error(e);}
+  try{ chartScatterFn(f); }catch(e){console.error(e);}
+}
+
+/* ============================================================
+   CSV LOADER
+============================================================ */
+function abrirCargador(){document.getElementById("csvModal").classList.add("show");}
+function cerrarCargador(){document.getElementById("csvModal").classList.remove("show");}
+document.getElementById("csvFile").addEventListener("change",(e)=>{
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{document.getElementById("csvText").value=r.result;};
+  r.readAsText(f);
+});
+
+function procesarCSV(){
+  const txt=document.getElementById("csvText").value.trim();
+  if(!txt){alert("Pega o sube un CSV primero");return;}
+  // detectar separador
+  const sep = txt.split("\n")[0].includes(";") ? ";" : ",";
+  const lines = txt.split(/\r?\n/).filter(l=>l.trim());
+  const header = lines[0].split(sep).map(h=>h.trim().toLowerCase());
+  const requeridos=["codigo","apellidos","nombres","sexo","ciclo","ta1","ta2","ta3","ep","ef","pf","asistencia"];
+  const idx={};
+  requeridos.forEach(r=>{idx[r]=header.findIndex(h=>h.includes(r));});
+  if(idx.codigo===-1 || idx.apellidos===-1){
+    alert("El CSV debe contener al menos columnas: "+requeridos.join(", "));
+    return;
+  }
+  const nuevos=[];
+  for(let i=1;i<lines.length;i++){
+    const c=lines[i].split(sep).map(s=>s.trim());
+    const get=(k,def="")=>idx[k]>=0?c[idx[k]]:def;
+    const e={
+      codigo:get("codigo"),
+      apellidos:get("apellidos"),
+      nombres:get("nombres"),
+      sexo:(get("sexo","M")||"M").toUpperCase().startsWith("F")?"F":"M",
+      ciclo:get("ciclo","VII"),
+      ta1:Number(get("ta1",0))||0,
+      ta2:Number(get("ta2",0))||0,
+      ta3:Number(get("ta3",0))||0,
+      ep:Number(get("ep",0))||0,
+      ef:Number(get("ef",0))||0,
+      pf:Number(get("pf",0))||0,
+      asistencia:Number(get("asistencia",0))||0
+    };
+    if(e.codigo) nuevos.push(e);
+  }
+  if(!nuevos.length){alert("No se pudo procesar el CSV");return;}
+  estudiantes=nuevos;
+  actualizarPromedios();
+  inicializarChipsSexo();
+  inicializarChipsCiclo();
+  bindChips();
+  limpiarFiltros();
+  cerrarCargador();
+}
+
+/* ============================================================
+   LOGO FIJO CYDERCAP
+============================================================ */
+const LOGO_CYDERCAP_URL = "https://www.cydercap.com/assets/img/logo.png";
+
+/* ============================================================
+   INIT
+============================================================ */
+function iniciarDashboard(){
+  try{
+    Chart.defaults.font.family="'Segoe UI', Tahoma, sans-serif";
+    Chart.defaults.font.size=11;
+    Chart.defaults.color="#1a2332";
+  }catch(e){}
+  inicializarChipsSexo();
+  inicializarChipsCiclo();
+  bindChips();
+  render();
+}
+window.iniciarDashboard = iniciarDashboard;
+if(document.readyState === "loading"){
+  document.addEventListener("DOMContentLoaded", iniciarDashboard);
+}else{
+  iniciarDashboard();
+}
+</script>
+
+</body>
+</html>
